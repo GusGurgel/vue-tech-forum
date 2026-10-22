@@ -1,88 +1,154 @@
 # Tech Forum
 
-Um forum online de tecnologia
+<p align="center" >
+  <!-- Substitua o link do src pela sua imagem/gif de demonstração, se tiver -->
+  <img src="./showcase.png" alt="Flappy Bird Showcase">
+</p>
 
-Para executar este projeto siga os passos descritos no arquivo [passo-a-passo](passo-a-passo.md)
 
-## Membros da equipe
+Tech Forum is an online technology discussion forum where users can browse discussion categories, create threads, and share replies.
 
-Gustavo Gurgel Medeiros, 539226, Ciência da Computação
+## Project Background
 
-## Papéis ou tipos de usuário da aplicação
+The project was originally developed as part of a **Web Development** course. Its first backend implementation used **Strapi**, while the frontend was built with Vue.js.
 
-- Usuário não registrado
-- Usuário registrado
-- Administrador
+Later, a second backend was developed using **Node.js, Express, Prisma, and SQLite**. The main motivation was that the original Strapi implementation had become outdated. The new backend reimplements the API while aiming to preserve compatibility with the existing frontend, reducing the need to rewrite its Vue components and Axios requests.
 
-## Entidades ou tabelas do sistema
+The repository therefore reflects two stages of the project: the original Strapi-based implementation and the newer Node.js backend.
 
-- Usuário (User)
-- Resposta (Response)
-- Tópico (Thread)
-- Conjunto (ThreadSet)
+## Features
 
-## Principais funcionalidades da aplicação
+- Browse discussion categories, threads, and replies without signing in.
+- Register an account and log in.
+- Create threads and reply to existing discussions.
+- Update your profile, including its profile image.
+- Manage your own threads and replies.
+- Allow administrators to manage categories, moderate users, pin threads, and moderate discussions.
+- Upload profile images.
 
-- Todos os Usuários
+## User Roles
 
-  - Podem ver todos os conjuntos de tópicos e respostas de tópicos
+- **Guest:** can browse categories, threads, and replies.
+- **Registered user:** can participate in discussions and manage their own content and profile.
+- **Administrator:** can manage categories and users, moderate discussions, and pin threads.
 
-- Usuários registrados
+## Data Model
 
-  - Criar tópicos
-  - Responder tópicos
+The main entities are:
 
-- Adiministradores
-  - Fixar tópicos
-  - Excluir tópicos
-  - Criar novos conjuntos
-  - Banir usuários
-  - Mover tópico de um conjunto para outro
+- **User** — account information, role, and profile image.
+- **ThreadSet** — a category or group of threads.
+- **Thread** — a discussion created by a user and associated with a category.
+- **Response** — a reply associated with a thread and its author.
+- **UploadedFile** — metadata for uploaded images.
 
-## Tecnologias e frameworks utilizados
+## Technologies
 
-**Frontend:**
+### Frontend
 
-- VueJS v3.0, Vue-Router e Pinia.
+- Vue.js 3
+- Vue Router
+- Pinia
 - Axios
 
-**Backend:**
+### Original Backend
 
 - Strapi
 
-## Operações implementadas para cada entidade da aplicação
+### New Backend
 
-| Entidade | Criação | Leitura | Atualização | Remoção |
-| -------- | ------- | ------- | ----------- | ------- |
-| Usuário  | X       | X       | X           |         |
-| Tópico   | X       | X       | X           | X       |
-| Resposta | X       | X       |             | X       |
-| Conjunto | X       | X       | X           | X       |
+- Node.js 20+
+- Express
+- Prisma ORM
+- SQLite
+- JSON Web Tokens (JWT) for authentication
+- Multer for image uploads
 
-> Lembre-se que é necessário implementar o CRUD de pelo menos duas entidades.
+## Running the Node.js Backend
 
-## Rotas da API REST utilizadas
+### Requirements
 
-Boa parte das rotas utilizada está na pasta `Back_End_Requests\`
+- Node.js 20 or later
+- npm
 
-| Method   | End Point              | Access Roles                                                                  |
-| -------- | ---------------------- | ----------------------------------------------------------------------------- |
-| `GET`    | `/api/thread-sets/`    | Public, Auth, Admin                                                           |
-| `GET`    | `/api/thread-sets/:id` | Public, Auth, Admin                                                           |
-| `GET`    | `/api/threads/`        | Public, Auth, Admin                                                           |
-| `GET`    | `/api/threads/:id`     | Public, Auth, Admin                                                           |
-| `GET`    | `/api/reponses/`       | Public, Auth, Admin                                                           |
-| `GET`    | `/api/reponses/:id`    | Public, Auth, Admin                                                           |
-| `GET`    | `/api/users/`          | Public, Auth, Admin                                                           |
-| `GET`    | `/api/users/me`        | Auth, Admin                                                                   |
-| `POST`   | `/api/thread-sets/`    | Admin                                                                         |
-| `POST`   | `/api/threads/`        | Auth, Admin                                                                   |
-| `POST`   | `/api/reponses/`       | Auth, Admin                                                                   |
-| `POST`   | `/api/auth/local`      | Public, Auth, Admin                                                           |
-| `POST`   | `/api/register/local`  | Public, Auth, Admin                                                           |
-| `PUT`    | `/api/thread-sets/`    | Admin                                                                         |
-| `PUT`    | `/api/threads/`        | Admin                                                                         |
-| `PUT`    | `/api/users/`          | Auth, Admin (Foi liberado para  possibilitar alteração   da imagem de perfil) |
-| `DELETE` | `/api/thread-sets/`    | Admin                                                                         |
-| `DELETE` | `/api/threads/`        | Admin                                                                         |
-| `DELETE` | `/api/reponses/`       | Admin                                                                         |
+### Setup
+
+Run the following commands from the directory containing the Node.js backend's `package.json`:
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create a local environment file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Edit `.env`. Set a strong, unique value for `JWT_SECRET`, and configure `ADMIN_EMAIL` and `ADMIN_PASSWORD` for the administrator account. Do not commit `.env` or real credentials to version control.
+
+4. Generate the Prisma Client and apply the database migrations:
+
+   ```bash
+   npm run db:generate
+   npm run db:migrate
+   ```
+
+5. Create or promote the configured administrator account:
+
+   ```bash
+   npm run db:seed
+   ```
+
+6. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+By default, the API runs at `http://localhost:1337`. Check `http://localhost:1337/health` to verify that the server is running.
+
+The backend accepts both regular paths (such as `/threads`) and paths prefixed with `/api` (such as `/api/threads`) to support Axios configurations originally made for Strapi.
+
+### Available Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Starts the development server with automatic restarts. |
+| `npm start` | Starts the server. |
+| `npm run db:generate` | Generates the Prisma Client. |
+| `npm run db:migrate` | Applies database migrations in development. |
+| `npm run db:deploy` | Applies existing migrations, suitable for deployment. |
+| `npm run db:seed` | Creates or promotes the administrator configured in `.env`. |
+| `npm run db:studio` | Opens Prisma Studio to inspect the database. |
+
+## API Overview
+
+The new backend provides the following main endpoints. Authenticated routes require a valid JWT; administrator-only operations require an administrator account.
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `GET` | `/health` | Public |
+| `POST` | `/auth/local/register` | Public |
+| `POST` | `/auth/local` | Public |
+| `GET` | `/users/me` | Authenticated |
+| `GET` | `/users` | Administrator |
+| `GET`, `PUT` | `/users/:id` | Owner or administrator, with privileged fields restricted to administrators |
+| `GET` | `/thread-sets`, `/thread-sets/:id` | Public |
+| `POST`, `PUT`, `DELETE` | `/thread-sets`, `/thread-sets/:id` | Administrator |
+| `GET` | `/threads`, `/threads/:id` | Public |
+| `POST` | `/threads` | Authenticated |
+| `PUT`, `DELETE` | `/threads/:id` | Thread author or administrator; pinning is administrator-only |
+| `GET` | `/responses`, `/responses/:id` | Public |
+| `POST` | `/responses` | Authenticated |
+| `PUT`, `DELETE` | `/responses/:id` | Response author or administrator, with thread-author deletion permissions supported |
+| `POST` | `/upload` | Authenticated |
+| `DELETE` | `/upload/files/:id` | Authenticated, subject to ownership rules |
+
+Collection endpoints support the filters and response shapes used by the Vue frontend. The API also supports the optional `/api` prefix to maintain compatibility with requests originally written for Strapi.
+
+## Project Author
+
+Gustavo Gurgel Medeiros — Computer Science
