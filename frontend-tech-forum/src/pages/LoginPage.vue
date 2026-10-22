@@ -50,6 +50,7 @@ async function haddleSubmit() {
       router.push('/')
     }
   } catch (e) {
+    console.log(e)
     if (isAxiosError(e) && isApplicationError(e.response?.data)) {
       exception.value = e.response?.data
     }

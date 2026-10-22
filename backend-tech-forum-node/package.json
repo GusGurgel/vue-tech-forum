@@ -2,27 +2,33 @@
   "name": "tech-forum-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Tech Forum API built with Node.js, Express and PostgreSQL, replacing the original Strapi API.",
-  "type": "module",
-  "engines": { "node": ">=20" },
+  "description": "REST API for the Tech Forum Vue frontend, built with Node.js, Express, Prisma and SQLite.",
+  "main": "src/server.js",
   "scripts": {
-    "start": "npm run db:migrate && node src/server.js",
-    "dev": "npm run db:migrate && node --watch src/server.js",
-    "db:migrate": "node src/db/migrate.js",
-    "db:import-strapi": "node scripts/import-strapi-sqlite.js",
-    "check": "node --check src/server.js && node --check src/db/pool.js && node --check src/db/migrate.js && node --check src/middleware/auth.js && node --check src/services/format.js && node --check src/routes/auth.js && node --check src/routes/users.js && node --check src/routes/thread-sets.js && node --check src/routes/threads.js && node --check src/routes/responses.js && node --check src/routes/uploads.js && node --check scripts/import-strapi-sqlite.js"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "@prisma/client": "6.19.3",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "helmet": "^8.0.0",
+    "dotenv": "^16.6.1",
+    "express": "^5.3.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.0",
-    "pg": "^8.13.1"
+    "multer": "^2.0.2"
   },
   "devDependencies": {
-    "better-sqlite3": "^11.7.0"
+    "prisma": "6.19.3"
   }
 }

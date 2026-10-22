@@ -6,7 +6,7 @@
 import { BASE_URL } from '../api/index';
 
 function getUploadURL(url: string) {
-  return `${BASE_URL}${url}`
+  return `${url}`
 }
 
 export const useUploadFile = (url: string) => getUploadURL(url)

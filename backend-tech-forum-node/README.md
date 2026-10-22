@@ -1,182 +1,109 @@
-# Tech Forum Backend — Node.js + PostgreSQL
+# Tech Forum — Backend
 
-Replacement for the original Strapi v4 backend. It uses **Node.js, Express and PostgreSQL** and keeps the main API resources and endpoint names used by the Strapi project:
+API REST do projeto **Tech Forum**, preparada para o frontend em Vue, Axios e Pinia enviado para análise. A API foi feita com Node.js, Express, Prisma ORM e SQLite, e mantém os caminhos e os formatos de resposta esperados pelas chamadas do frontend (incluindo o formato `{ "data": ... }` usado nas rotas de threads, respostas e categorias).
 
-- `users` and local authentication
-- `thread-sets` (forum categories)
-- `threads` (forum topics)
-- `responses` (replies)
-- image uploads and profile pictures
+## Requisitos
 
-The REST API returns flattened JSON objects, consistent with the original project's Strapi Transformer configuration (`removeDataKey` / `removeAttributesKey`). Request bodies may be sent as either `{ "title": "..." }` or Strapi-style `{ "data": { "title": "..." } }`.
-
-> This replaces the **content API**, not Strapi's administrative dashboard. There is no Strapi Admin UI in this project.
-
-## 1. Requirements
-
-- Node.js 20 or newer
-- Docker and Docker Compose, or a running PostgreSQL instance
+- Node.js 20 ou superior
 - npm
 
-## 2. Start PostgreSQL
+## Executar localmente
 
-From this directory, run:
-
-```bash
-docker compose up -d postgres
-```
-
-The provided Compose file creates a database called `tech_forum` with user `tech_forum` and password `change_me`. Change these credentials before using the project outside a local development environment.
-
-## 3. Configure and run the API
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and set `JWT_SECRET` to a long, random value. Then run:
-
-```bash
-npm install
-npm run dev
-```
-
-The API listens at `http://localhost:1337`. `npm run dev` creates/updates the schema before starting the server. To run without file watching, use `npm start`.
-
-Useful checks:
-
-```bash
-curl http://localhost:1337/health
-curl http://localhost:1337/api/thread-sets
-curl http://localhost:1337/api/threads
-```
-
-The existing image assets from the Strapi project are included under `public/uploads` and are served at URLs such as `http://localhost:1337/uploads/guts_b8ef490bb3.webp`.
-
-## 4. API endpoints
-
-| Method | Endpoint | Authentication | Purpose |
-|---|---|---|---|
-| `POST` | `/api/auth/local/register` | Public | Register using `username`, `email`, `password` |
-| `POST` | `/api/auth/local` | Public | Login with `identifier` (username or email) and `password` |
-| `GET` | `/api/users/me` | Bearer JWT | Get the current user's profile |
-| `PATCH` | `/api/users/me` | Bearer JWT | Update the current profile, password, or image |
-| `GET` | `/api/users` | Public | List public profiles |
-| `GET` | `/api/users/:id` | Public | Get one public profile |
-| `GET` | `/api/thread-sets` | Public | List categories |
-| `GET` | `/api/thread-sets/:id` | Public | Get a category |
-| `POST` / `PATCH` / `DELETE` | `/api/thread-sets[/:id]` | Bearer JWT | Manage categories |
-| `GET` | `/api/threads` | Public | List topics, including author, category and replies |
-| `GET` | `/api/threads/:id` | Public | Get one topic |
-| `POST` / `PATCH` / `DELETE` | `/api/threads[/:id]` | Bearer JWT | Create or manage your own topics |
-| `GET` | `/api/responses` | Public | List replies |
-| `GET` | `/api/responses/:id` | Public | Get one reply |
-| `POST` / `PATCH` / `DELETE` | `/api/responses[/:id]` | Bearer JWT | Create or manage your own replies |
-| `POST` | `/api/upload` | Bearer JWT | Upload up to five profile images (`multipart/form-data`, field `files`) |
-| `DELETE` | `/api/upload/:id` | Bearer JWT | Delete your own upload |
-
-All public reads are unauthenticated. Creating content requires a JWT. Users can edit/delete only their own threads and replies; category management requires a JWT. Passwords and authentication tokens are never included in public profile responses.
-
-### Register
-
-```bash
-curl -X POST http://localhost:1337/api/auth/local/register \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"gurgel","email":"gurgel@example.com","password":"a-strong-password"}'
-```
-
-The response contains a `jwt` token and a public `user` object. Use the token for protected routes:
-
-```bash
-curl http://localhost:1337/api/users/me \
-  -H 'Authorization: Bearer YOUR_JWT'
-```
-
-### Create a category
-
-```bash
-curl -X POST http://localhost:1337/api/thread-sets \
-  -H 'Authorization: Bearer YOUR_JWT' \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Game Development","description":"Game development topics"}'
-```
-
-### Create a topic
-
-Pass the category ID using `thread_set`, `threadSetId`, or `thread_set_id`:
-
-```bash
-curl -X POST http://localhost:1337/api/threads \
-  -H 'Authorization: Bearer YOUR_JWT' \
-  -H 'Content-Type: application/json' \
-  -d '{"title":"How do I build a Godot enemy AI?","thread_set":{"id":1}}'
-```
-
-### Reply to a topic
-
-```bash
-curl -X POST http://localhost:1337/api/responses \
-  -H 'Authorization: Bearer YOUR_JWT' \
-  -H 'Content-Type: application/json' \
-  -d '{"content":"You can use a RayCast2D for line-of-sight checks.","thread":{"id":1}}'
-```
-
-### Upload a profile image
-
-```bash
-curl -X POST http://localhost:1337/api/upload \
-  -H 'Authorization: Bearer YOUR_JWT' \
-  -F 'files=@./avatar.png'
-```
-
-The response is an array of upload objects. Send the returned upload `id` in the profile update:
-
-```bash
-curl -X PATCH http://localhost:1337/api/users/me \
-  -H 'Authorization: Bearer YOUR_JWT' \
-  -H 'Content-Type: application/json' \
-  -d '{"image":1}'
-```
-
-## 5. Query filters and sorting
-
-The common Strapi query-string forms below are supported:
-
-```text
-GET /api/threads?filters[title][$containsi]=godot
-GET /api/threads?filters[thread_set][id][$eq]=1
-GET /api/threads?filters[isFixed][$eq]=true
-GET /api/threads?sort=createdAt:desc&pagination[page]=1&pagination[pageSize]=20
-GET /api/responses?filters[thread][id][$eq]=1
-GET /api/thread-sets?sort=name:asc
-```
-
-The collection response is a JSON array of flattened objects. The API supports pagination controls up to 100 rows per request. Unknown sort fields are ignored and replaced with a safe default.
-
-## 6. Import existing Strapi data (optional)
-
-The old Strapi project uses SQLite at `.tmp/data.db`. If you want to transfer its existing users, categories, topics, replies and media metadata into PostgreSQL:
-
-1. Keep the old Strapi project/database available. Do **not** delete or overwrite its `.tmp/data.db`.
-2. From this backend directory, install dependencies and run the schema migration:
+1. Entre na pasta do backend e instale as dependências:
 
    ```bash
    npm install
-   npm run db:migrate
    ```
 
-3. Point the importer at the old database and run it:
+2. Crie o arquivo `.env` copiando o exemplo:
 
    ```bash
-   LEGACY_SQLITE_PATH=../Back_End_Tech_Forum/.tmp/data.db npm run db:import-strapi
+   cp .env.example .env
    ```
 
-The path is relative to this project's directory (or it can be an absolute path). The importer preserves IDs and password hashes and avoids overwriting rows already in PostgreSQL. Test this against a backup first. The image files included in `public/uploads` are copied from the uploaded Strapi project; if your production database refers to other upload files, copy those files too.
+   Ajuste `JWT_SECRET` para um valor aleatório e troque a senha de administrador em `ADMIN_PASSWORD`. O frontend citado nas requisições usa `http://localhost:1337`, então essa é a porta padrão da API. Caso seu frontend rode em outra origem, ajuste `FRONTEND_ORIGIN`.
 
-## 7. Notes and assumptions
+3. Crie o banco SQLite e gere o Prisma Client:
 
-- The old schemas declare some user/category/thread relationships as `oneToOne`, but the old SQLite database stores multiple topics per user and multiple replies per topic. This backend follows the actual forum behavior: one user can create many topics, and one topic can have many replies.
-- New categories, topics and replies are published immediately. Draft/publication workflows from the Strapi Admin UI are not reproduced.
-- `isFixed` is preserved and fixed topics are shown first. The project does not contain a separate moderator/role system, so this backend does not implement admin-only moderation.
-- Image upload is restricted to common image formats and 5 MB by default. Change `UPLOAD_MAX_FILE_SIZE_MB` in `.env` to adjust it.
-- Use HTTPS, a strong `JWT_SECRET`, restricted CORS origins and managed PostgreSQL credentials for production deployment.
+   ```bash
+   npx prisma migrate dev --name init
+   npx prisma generate
+   ```
+
+4. Crie a conta administrativa configurada no `.env`:
+
+   ```bash
+   npm run db:seed
+   ```
+
+   O seed promove a conta informada em `ADMIN_EMAIL` a administradora, ou cria essa conta caso ainda não exista.
+
+5. Inicie o backend:
+
+   ```bash
+   npm run dev
+   ```
+
+   A API estará em `http://localhost:1337`. Para conferir se está ativa, abra `http://localhost:1337/health`.
+
+## Scripts úteis
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run dev` | Inicia o servidor com reinicialização automática |
+| `npm start` | Inicia o servidor normalmente |
+| `npm run db:migrate` | Executa migrações locais do Prisma |
+| `npm run db:deploy` | Aplica migrações existentes, recomendado para deploy |
+| `npm run db:seed` | Cria/promove a conta administrativa configurada no `.env` |
+| `npm run db:studio` | Abre a interface visual do banco pelo Prisma Studio |
+
+## Rotas implementadas
+
+### Autenticação e usuários
+
+| Método | Endpoint | Acesso |
+| --- | --- | --- |
+| `POST` | `/auth/local/register` | Público |
+| `POST` | `/auth/local` | Público |
+| `GET` | `/users/me` | Autenticado |
+| `GET` | `/users` | Administrador |
+| `GET` | `/users/:id` | Próprio usuário ou administrador |
+| `PUT` | `/users/:id` | Próprio usuário ou administrador; bloqueio e mudança de papel só por administrador |
+
+O login retorna `{ jwt, user }`. O perfil `/users/me` retorna o objeto de usuário diretamente, com `role.type` igual a `admin` ou `authenticated`, como o frontend espera. As rotas administrativas de usuário retornam uma lista JSON direta em `GET /users`, compatível com `UsersContainer.vue`.
+
+### Thread sets, threads e respostas
+
+| Método | Endpoint | Acesso |
+| --- | --- | --- |
+| `GET` | `/thread-sets` e `/thread-sets/:id` | Público |
+| `POST`, `PUT`, `DELETE` | `/thread-sets` e `/thread-sets/:id` | Administrador |
+| `GET` | `/threads` e `/threads/:id` | Público |
+| `POST` | `/threads` | Autenticado |
+| `PUT`, `DELETE` | `/threads/:id` | Autor ou administrador (fixar tópico somente administrador) |
+| `GET` | `/responses` e `/responses/:id` | Público |
+| `POST` | `/responses` | Autenticado |
+| `PUT`, `DELETE` | `/responses/:id` | Autor ou administrador |
+
+As listagens aceitam os filtros usados pelo frontend, incluindo `filters[thread][id][$eq]` e `filters[thread_set][id][$eq]`. Também aceitam parâmetros `sort` e `pagination[limit]`. As respostas das coleções seguem `{ data: [...], meta: { pagination: ... } }`; recursos individuais seguem `{ data: {...}, meta: {} }`.
+
+Para manter compatibilidade com formulários `FormData`, os endpoints de criação/edição aceitam tanto JSON normal quanto o campo multipart `data` contendo uma string JSON. A criação de resposta aceita o conteúdo no campo `content`, `body` ou `text`.
+
+### Uploads
+
+| Método | Endpoint | Acesso |
+| --- | --- | --- |
+| `POST` | `/upload` | Autenticado, campo multipart `files` |
+| `DELETE` | `/upload/files/:id` | Autenticado |
+
+O upload retorna uma lista de imagens com `id` e `url`, como o frontend utiliza. Arquivos de perfil ficam em `uploads/` e são servidos por `/uploads/<arquivo>`. São aceitas imagens JPEG, PNG, WEBP e GIF de até 5 MB por arquivo.
+
+## Compatibilidade observada no frontend
+
+- A API usa porta `1337` por padrão, igual à URL local usada pelo projeto.
+- As rotas `/auth/local`, `/auth/local/register`, `/users/me`, `/users/:id`, `/upload`, `/thread-sets`, `/threads` e `/responses` estão implementadas.
+- Os campos relacionais são expostos como `thread_set`, `author`, `thread` e `image` para acompanhar os objetos usados nos componentes Vue.
+- IDs de autor enviados pelo frontend não são confiados: a API usa o usuário validado pelo token JWT.
+- Threads e respostas são removidas automaticamente quando a categoria ou a thread pai é excluída.
+
+**Nota:** o ZIP recebido contém os componentes e páginas listados nele, mas não inclui todos os componentes auxiliares, como os formulários/entradas completos de resposta, o módulo Axios `api`, nem o schema TypeScript. Por isso, a API aceita aliases comuns para o conteúdo da resposta; se um dos arquivos ausentes usar um nome de campo diferente, será necessário conferir essa chamada específica.
